@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState } from 'react';
 import { CiSearch } from 'react-icons/ci';
 import {
   SearchFormStyled,
@@ -7,37 +7,33 @@ import {
   SpanBtnStyled,
   InputStyled,
 } from './Searchbar.styled';
-class Searchbar extends Component {
-  state = {
-    query: '',
+const Searchbar = ({ toSubmit }) => {
+  const [query, setQuery] = useState('');
+  const handleInput = ev => {
+    setQuery(ev.target.value);
   };
-
-  handleInput = ev => {
-    this.setState({ query: ev.target.value });
-  };
-  handleSubmit = ev => {
+  const handleSubmit = ev => {
     ev.preventDefault();
-    this.props.handleSubmit(this.state.query);
+    toSubmit(query);
   };
-  render() {
-    return (
-      <HeaderStyled>
-        <SearchFormStyled onSubmit={this.handleSubmit}>
-          <SearchFormBtn type="submit">
-            <CiSearch size={30} />
-            <SpanBtnStyled>Search</SpanBtnStyled>
-          </SearchFormBtn>
+  return (
+    <HeaderStyled>
+      <SearchFormStyled onSubmit={handleSubmit}>
+        <SearchFormBtn type="submit">
+          <CiSearch size={30} />
+          <SpanBtnStyled>Search</SpanBtnStyled>
+        </SearchFormBtn>
 
-          <InputStyled
-            onInput={this.handleInput}
-            type="text"
-            autoComplete="off"
-            autoFocus
-            placeholder="Search images and photos"
-          />
-        </SearchFormStyled>
-      </HeaderStyled>
-    );
-  }
-}
+        <InputStyled
+          onInput={handleInput}
+          type="text"
+          autoComplete="off"
+          autoFocus
+          placeholder="Search images and photos"
+        />
+      </SearchFormStyled>
+    </HeaderStyled>
+  );
+};
+
 export default Searchbar;

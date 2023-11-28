@@ -1,4 +1,3 @@
-import { Component } from 'react';
 import Searchbar from './Searchbar/Searchbar';
 import { requestImage } from 'service/request';
 import ImageGallery from './ImageGallery/ImageGallery';
@@ -7,78 +6,70 @@ import { Loader } from './Loader/Loader';
 import { ErrorStyled } from './ErrorMessage/Error.styled';
 import Modal from './Modal/Modal';
 import { AppStyled } from './AppStyled/AppStuled';
+import { useEffect, useState } from 'react';
 
-class App extends Component {
-  state = {
-    images: [],
-    query: '',
-    page: 1,
-    totalPage: 1,
-    error: '',
-    isLoadMore: false,
-    isLoading: false,
-    isEmpty: false,
-    url: '',
-  };
-  componentDidUpdate(_, prevState) {
-    const { query, page } = this.state;
-    if (prevState.query !== query || prevState.page !== page) {
-      this.setState({ isLoading: true });
-      requestImage(this.state)
-        .then(({ hits, totalHits }) => {
-          if (!hits.length) {
-            this.setState({ isEmpty: true, isLoadMore: false });
-            return;
-          }
-          this.setState(prevState => ({
-            images: [...prevState.images, ...hits],
-            totalPage: totalHits,
-            isLoadMore: page < Math.ceil(totalHits / 12),
-          }));
-        })
-        .catch(err => {
-          this.setState({ error: err.message });
-        })
-        .finally(() => {
-          this.setState({ isLoading: false });
+const App = () => {
+  const [images, setImages] = useState([]);
+  const [query, setQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [error, setError] = useState('');
+  const [isLoadMore, setIsLoadMore] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isEmpty, setIsEmpty] = useState(false);
+  const [url, setUrl] = useState('');
+
+  useEffect(() => {
+    if (!query) return;
+    setIsLoading(true);
+    requestImage(query, page)
+      .then(({ hits, totalHits }) => {
+        if (!hits.length) {
+          setIsEmpty(true);
+          setIsLoadMore(false);
+          return;
+        }
+        setImages(prev => {
+          return [...prev, ...hits];
         });
+        setIsLoadMore(page < Math.ceil(totalHits / 12));
+      })
+      .catch(err => {
+        console.log('err', err);
+        setError(err);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, [page, query]);
+  const handleSubmit = request => {
+    if (request === query) {
+      return;
     }
-  }
+    setQuery(request);
+    setPage(1);
+    setImages([]);
+    setError('');
+    setIsEmpty(false);
+  };
+  const loadMore = () => {
+    setPage(prev => prev + 1);
+  };
+  const openModal = url => {
+    setUrl(url);
+  };
+  return (
+    <AppStyled>
+      {isLoading && <Loader />}
+      <Searchbar toSubmit={handleSubmit} />
+      {isEmpty && <ErrorStyled>Sorry. There are no images ... 😭</ErrorStyled>}
+      {url && <Modal src={url} closeModal={openModal} />}
+      {error && <ErrorStyled>Sorry. {error}...😭</ErrorStyled>}
+      <ImageGallery images={images} openModal={openModal} />
+      {isLoadMore && <Button onClick={loadMore}>Load More</Button>}
+    </AppStyled>
+  );
+};
 
-  handleSubmit = query => {
-    if (this.state.query === query) {
-      return
-    }
-    this.setState({
-      query,
-      page: 1,
-      images: [],
-      error: '',
-      isEmpty: false,
-    });
-  };
-  loadMore = () => {
-    this.setState(prevState => ({ page: (prevState.page + 1) }));
-  };
-  openModal = url => {
-    this.setState({ url });
-  };
-  render() {
-    const { images, isLoadMore, isLoading, error, isEmpty, url } = this.state;
-    return (
-      <AppStyled>
-        {isLoading && <Loader />}
-        <Searchbar handleSubmit={this.handleSubmit} />
-        {isEmpty && (
-          <ErrorStyled>Sorry. There are no images ... 😭</ErrorStyled>
-        )}
-        {url && <Modal srs={url} closeModal={this.openModal} />}
-        {error && <ErrorStyled>Sorry. {error}...😭</ErrorStyled>}
-        <ImageGallery images={images} openModal={this.openModal} />
-        {isLoadMore && <Button onClick={this.loadMore}>Load More</Button>}
-      </AppStyled>
-    );
-  }
-}
+
 
 export default App;
